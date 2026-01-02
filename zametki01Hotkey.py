@@ -22,7 +22,7 @@ class NotesApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Заметки")
-        self.root.geometry("1000x600")
+        self.root.geometry("1050x620")
         self.root.configure(bg=COLORS["bg_main"])
 
         self.notes = []
@@ -39,7 +39,7 @@ class NotesApp:
         self.load_notes()
 
     def _init_ui(self):
-        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=290)
+        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=295)
         sidebar.pack(side=tk.LEFT, fill=tk.Y)
         sidebar.pack_propagate(False)
 
@@ -76,8 +76,10 @@ class NotesApp:
         self.cat_option_menu.config(width=14)
         self.cat_option_menu.pack(side=tk.LEFT, padx=(0, 8))
 
-        self.make_button(cat_frame, "Новая", self.add_category,
-                         COLORS["btn_light"], COLORS["fg_dark"], width=9).pack(side=tk.LEFT, padx=3)
+        for text, cmd in [("Новая", self.add_category), ("Изменить", self.rename_category),
+                          ("Удалить", self.delete_category)]:
+            self.make_button(cat_frame, text, cmd, COLORS["btn_light"], COLORS["fg_dark"],
+                             width=9).pack(side=tk.LEFT, padx=3)
 
         self.text_area = tk.Text(main, wrap=tk.WORD, bg=COLORS["bg_card"], fg=COLORS["fg_white"],
                                  insertbackground="white", relief="flat", font=("Arial", 12), undo=True)
@@ -103,10 +105,49 @@ class NotesApp:
                               activebackground=COLORS["btn_blue"])
 
     def _bind_events(self):
+        self.root.bind("<Control-KeyPress>", self._handle_hotkeys)
         self.search_entry.bind("<FocusIn>", lambda _: self._toggle_search_placeholder(True))
         self.search_entry.bind("<FocusOut>", lambda _: self._toggle_search_placeholder(False))
         self.search_var.trace_add("write", lambda *_: self.on_search())
         self.notes_listbox.bind("<<ListboxSelect>>", self.on_note_select)
+
+    def _handle_hotkeys(self, event):
+        key = event.keysym.lower()
+        if key == 'c': self._clip_op("copy"); return "break"
+        if key == 'v': self._clip_op("paste"); return "break"
+        if key == 'x': self._clip_op("cut"); return "break"
+        if key == 'a': self._clip_op("select_all"); return "break"
+
+    def _clip_op(self, op):
+        w = self.root.focus_get()
+        if not isinstance(w, (tk.Text, tk.Entry)):
+            return
+        try:
+            if op == "copy":
+                val = w.get("sel.first", "sel.last") if isinstance(w, tk.Text) else w.selection_get()
+                self.root.clipboard_clear()
+                self.root.clipboard_append(val)
+            elif op == "paste":
+                val = self.root.clipboard_get()
+                if isinstance(w, tk.Text):
+                    try:
+                        w.delete("sel.first", "sel.last")
+                    except:
+                        pass
+                    w.insert(tk.INSERT, val)
+                else:
+                    w.insert(tk.INSERT, val)
+            elif op == "cut":
+                self._clip_op("copy")
+                w.delete("sel.first", "sel.last")
+            elif op == "select_all":
+                if isinstance(w, tk.Text):
+                    w.tag_add("sel", "1.0", "end")
+                else:
+                    w.select_range(0, tk.END)
+                    w.icursor(tk.END)
+        except:
+            pass
 
     def _toggle_search_placeholder(self, is_focus):
         if is_focus and self.search_entry.get() == "Поиск...":
@@ -121,6 +162,33 @@ class NotesApp:
         if name and name.strip() and name not in self.categories:
             self.categories.append(name.strip())
             self._update_cat_menu()
+
+    def rename_category(self):
+        old = self.category_var.get()
+        if old == "Без категории":
+            return
+        new = simpledialog.askstring("Изменить", f"Новое имя для '{old}':")
+        if new and new.strip() and new not in self.categories:
+            self.categories[self.categories.index(old)] = new.strip()
+            for n in self.notes:
+                if n['category'] == old:
+                    n['category'] = new.strip()
+            self.category_var.set(new.strip())
+            self._update_cat_menu()
+            self._finalize_change()
+
+    def delete_category(self):
+        cat = self.category_var.get()
+        if cat == "Без категории":
+            return
+        if messagebox.askyesno("Удалить", f"Удалить категорию '{cat}'?"):
+            self.categories.remove(cat)
+            for n in self.notes:
+                if n['category'] == cat:
+                    n['category'] = "Без категории"
+            self.category_var.set("Без категории")
+            self._update_cat_menu()
+            self._finalize_change()
 
     def _update_cat_menu(self):
         menu = self.cat_option_menu["menu"]

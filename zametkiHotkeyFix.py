@@ -6,23 +6,24 @@ from datetime import datetime
 DATA_FILE = "notes_data.json"
 
 COLORS = {
-    "bg_main": "#1f2335",
-    "bg_side": "#24283b",
-    "bg_card": "#2a2f45",
-    "bg_entry": "#313551",
-    "fg_white": "#c0caf5",
-    "fg_gray": "#9aa5ce",
-    "fg_dark": "#1f2335",
-    "btn_blue": "#7aa2f7",
-    "btn_light": "#c0caf5"
+    "bg_main": "#1e1e2f",
+    "bg_side": "#25253a",
+    "bg_card": "#2f3146",
+    "bg_entry": "#353754",
+    "fg_white": "#ffffff",
+    "fg_gray": "#9ca3af",
+    "fg_dark": "#1e1e2f",
+    "btn_blue": "#4f7cff",
+    "btn_light": "#f0f0f0"
 }
 
 
 class NotesApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Заметки")
-        self.root.geometry("1050x620")
+        self.root.title("Notes App")
+        self.root.geometry("1100x640")
+        self.root.minsize(900, 520)
         self.root.configure(bg=COLORS["bg_main"])
 
         self.notes = []
@@ -33,76 +34,83 @@ class NotesApp:
         self.title_var = tk.StringVar()
         self.search_var = tk.StringVar()
         self.category_var = tk.StringVar(value="Без категории")
+        self.sort_var = tk.StringVar(value="По дате")
 
         self._init_ui()
         self._bind_events()
         self.load_notes()
 
     def _init_ui(self):
-        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=295)
+        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=305)
         sidebar.pack(side=tk.LEFT, fill=tk.Y)
         sidebar.pack_propagate(False)
 
         tk.Label(sidebar, text="Заметки", bg=COLORS["bg_side"], fg=COLORS["fg_white"],
-                 font=("Arial", 18, "bold")).pack(pady=13)
+                 font=("Arial", 19, "bold")).pack(pady=14)
 
         self.make_button(sidebar, "+ Новая заметка", self.new_note,
-                         COLORS["btn_light"], COLORS["fg_dark"]).pack(fill=tk.X, padx=13, pady=4)
+                         COLORS["btn_light"], COLORS["fg_dark"]).pack(fill=tk.X, padx=14, pady=4)
 
         self.search_entry = tk.Entry(sidebar, textvariable=self.search_var, bg=COLORS["bg_entry"],
                                      fg=COLORS["fg_gray"], insertbackground="white",
-                                     relief="flat", font=("Arial", 10))
-        self.search_entry.pack(fill=tk.X, padx=13, pady=8, ipady=5)
-        self.search_entry.insert(0, "Поиск...")
+                                     relief="flat", font=("Arial", 11))
+        self.search_entry.pack(fill=tk.X, padx=14, pady=9, ipady=6)
+        self.search_entry.insert(0, "Search")
+
+        tk.Label(sidebar, text="Сортировка", bg=COLORS["bg_side"], fg=COLORS["fg_white"],
+                 font=("Arial", 10, "bold")).pack(anchor="w", padx=14)
+
+        self.sort_menu = tk.OptionMenu(sidebar, self.sort_var, "По дате", "По названию", "По категории")
+        self._style_widget(self.sort_menu)
+        self.sort_menu.pack(fill=tk.X, padx=14, pady=6)
 
         self.notes_listbox = tk.Listbox(sidebar, bg=COLORS["bg_card"], fg=COLORS["fg_white"],
                                         selectbackground=COLORS["btn_blue"], relief="flat",
                                         bd=0, font=("Arial", 10))
-        self.notes_listbox.pack(fill=tk.BOTH, expand=True, padx=13, pady=8)
+        self.notes_listbox.pack(fill=tk.BOTH, expand=True, padx=14, pady=9)
 
         main = tk.Frame(self.root, bg=COLORS["bg_main"])
         main.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self.title_entry = tk.Entry(main, textvariable=self.title_var, bg=COLORS["bg_entry"],
                                     fg=COLORS["fg_white"], insertbackground="white",
-                                    relief="flat", font=("Arial", 16))
-        self.title_entry.pack(fill=tk.X, padx=18, pady=(15, 6), ipady=7)
+                                    relief="flat", font=("Arial", 17))
+        self.title_entry.pack(fill=tk.X, padx=19, pady=(14, 7), ipady=8)
 
         cat_frame = tk.Frame(main, bg=COLORS["bg_main"])
-        cat_frame.pack(fill=tk.X, padx=18, pady=4)
+        cat_frame.pack(fill=tk.X, padx=19, pady=5)
 
         self.cat_option_menu = tk.OptionMenu(cat_frame, self.category_var, *self.categories)
         self._style_widget(self.cat_option_menu)
         self.cat_option_menu.config(width=14)
-        self.cat_option_menu.pack(side=tk.LEFT, padx=(0, 8))
+        self.cat_option_menu.pack(side=tk.LEFT, padx=(0, 9))
 
         for text, cmd in [("Новая", self.add_category), ("Изменить", self.rename_category),
                           ("Удалить", self.delete_category)]:
             self.make_button(cat_frame, text, cmd, COLORS["btn_light"], COLORS["fg_dark"],
-                             width=9).pack(side=tk.LEFT, padx=3)
+                             width=9).pack(side=tk.LEFT, padx=4)
 
         self.text_area = tk.Text(main, wrap=tk.WORD, bg=COLORS["bg_card"], fg=COLORS["fg_white"],
                                  insertbackground="white", relief="flat", font=("Arial", 12), undo=True)
-        self.text_area.pack(fill=tk.BOTH, expand=True, padx=18, pady=8)
+        self.text_area.pack(fill=tk.BOTH, expand=True, padx=19, pady=9)
 
         btn_row = tk.Frame(main, bg=COLORS["bg_main"])
-        btn_row.pack(fill=tk.X, padx=18, pady=8)
+        btn_row.pack(fill=tk.X, padx=19, pady=9)
 
         for text, cmd in [("Сохранить", self.save_note), ("Удалить", self.delete_note)]:
             self.make_button(btn_row, text, cmd, COLORS["btn_light"], COLORS["fg_dark"]).pack(side=tk.LEFT, padx=4)
 
     def make_button(self, parent, text, command, color, fg, width=None):
         btn = tk.Button(parent, text=text, command=command, bg=color, fg=fg, relief="flat",
-                        cursor="hand2", font=("Arial", 10, "bold"), padx=10, pady=7,
+                        cursor="hand2", font=("Arial", 10, "bold"), padx=11, pady=7,
                         activebackground=color)
         if width:
             btn.config(width=width)
         return btn
 
     def _style_widget(self, widget):
-        widget.config(bg=COLORS["bg_entry"], fg=COLORS["fg_white"], relief="flat", bd=0, font=("Arial", 10))
-        widget["menu"].config(bg=COLORS["bg_entry"], fg=COLORS["fg_white"],
-                              activebackground=COLORS["btn_blue"])
+        widget.config(bg=COLORS["bg_entry"], fg="white", relief="flat", bd=0, font=("Arial", 10))
+        widget["menu"].config(bg=COLORS["bg_entry"], fg="white", activebackground=COLORS["btn_blue"])
 
     def _bind_events(self):
         self.root.bind("<Control-KeyPress>", self._handle_hotkeys)
@@ -112,11 +120,11 @@ class NotesApp:
         self.notes_listbox.bind("<<ListboxSelect>>", self.on_note_select)
 
     def _handle_hotkeys(self, event):
-        key = event.keysym.lower()
-        if key == 'c': self._clip_op("copy"); return "break"
-        if key == 'v': self._clip_op("paste"); return "break"
-        if key == 'x': self._clip_op("cut"); return "break"
-        if key == 'a': self._clip_op("select_all"); return "break"
+        key, code = event.keysym.lower(), event.keycode
+        if code == 67 or key in ['c', 'с']: self._clip_op("copy"); return "break"
+        if code == 86 or key in ['v', 'м']: self._clip_op("paste"); return "break"
+        if code == 88 or key in ['x', 'ч']: self._clip_op("cut"); return "break"
+        if code == 65 or key in ['a', 'ф']: self._clip_op("select_all"); return "break"
 
     def _clip_op(self, op):
         w = self.root.focus_get()
@@ -150,11 +158,11 @@ class NotesApp:
             pass
 
     def _toggle_search_placeholder(self, is_focus):
-        if is_focus and self.search_entry.get() == "Поиск...":
+        if is_focus and self.search_entry.get() == "Search":
             self.search_entry.delete(0, tk.END)
             self.search_entry.config(fg=COLORS["fg_white"])
         elif not is_focus and not self.search_entry.get():
-            self.search_entry.insert(0, "Поиск...")
+            self.search_entry.insert(0, "Search")
             self.search_entry.config(fg=COLORS["fg_gray"])
 
     def add_category(self):
@@ -198,7 +206,7 @@ class NotesApp:
 
     def on_search(self):
         q = self.search_var.get().lower()
-        if q in ("", "поиск..."):
+        if q == "search":
             q = ""
         self.visible_indices = [i for i, n in enumerate(self.notes)
                                  if q in n['title'].lower() or q in n['content'].lower()] if q else list(
@@ -263,7 +271,7 @@ class NotesApp:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 self.notes = json.load(f)
                 for n in self.notes:
-                    if n.get('category') and n['category'] not in self.categories:
+                    if n['category'] not in self.categories:
                         self.categories.append(n['category'])
         except (FileNotFoundError, json.JSONDecodeError):
             pass

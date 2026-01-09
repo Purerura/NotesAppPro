@@ -41,7 +41,7 @@ class NotesApp:
         self.load_notes()
 
     def _init_ui(self):
-        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=305)
+        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=310)
         sidebar.pack(side=tk.LEFT, fill=tk.Y)
         sidebar.pack_propagate(False)
 
@@ -60,9 +60,10 @@ class NotesApp:
         tk.Label(sidebar, text="Сортировка", bg=COLORS["bg_side"], fg=COLORS["fg_white"],
                  font=("Arial", 10, "bold")).pack(anchor="w", padx=14)
 
-        self.sort_menu = tk.OptionMenu(sidebar, self.sort_var, "По дате", "По названию", "По категории")
+        self.sort_menu = tk.OptionMenu(sidebar, self.sort_var, "По дате", "По названию", "По категории",
+                                       command=lambda _: self.sort_notes())
         self._style_widget(self.sort_menu)
-        self.sort_menu.pack(fill=tk.X, padx=14, pady=6)
+        self.sort_menu.pack(fill=tk.X, padx=14, pady=7)
 
         self.notes_listbox = tk.Listbox(sidebar, bg=COLORS["bg_card"], fg=COLORS["fg_white"],
                                         selectbackground=COLORS["btn_blue"], relief="flat",
@@ -247,6 +248,16 @@ class NotesApp:
         self.category_var.set(n['category'])
         self.text_area.delete("1.0", tk.END)
         self.text_area.insert("1.0", n['content'])
+
+    def sort_notes(self):
+        mode = self.sort_var.get()
+        if mode == "По названию":
+            self.notes.sort(key=lambda x: x['title'].lower())
+        elif mode == "По категории":
+            self.notes.sort(key=lambda x: x['category'].lower())
+        else:
+            self.notes.sort(key=lambda x: x['date'], reverse=True)
+        self.refresh_list()
 
     def refresh_list(self):
         self.visible_indices = list(range(len(self.notes)))

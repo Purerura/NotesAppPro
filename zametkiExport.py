@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox, filedialog, simpledialog
 import json
 from datetime import datetime
 
@@ -22,8 +22,8 @@ class NotesApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Notes App")
-        self.root.geometry("1100x640")
-        self.root.minsize(900, 520)
+        self.root.geometry("1120x650")
+        self.root.minsize(930, 530)
         self.root.configure(bg=COLORS["bg_main"])
 
         self.notes = []
@@ -41,69 +41,70 @@ class NotesApp:
         self.load_notes()
 
     def _init_ui(self):
-        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=310)
+        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=315)
         sidebar.pack(side=tk.LEFT, fill=tk.Y)
         sidebar.pack_propagate(False)
 
         tk.Label(sidebar, text="Заметки", bg=COLORS["bg_side"], fg=COLORS["fg_white"],
-                 font=("Arial", 19, "bold")).pack(pady=14)
+                 font=("Arial", 20, "bold")).pack(pady=14)
 
         self.make_button(sidebar, "+ Новая заметка", self.new_note,
-                         COLORS["btn_light"], COLORS["fg_dark"]).pack(fill=tk.X, padx=14, pady=4)
+                         COLORS["btn_light"], COLORS["fg_dark"]).pack(fill=tk.X, padx=15, pady=5)
 
         self.search_entry = tk.Entry(sidebar, textvariable=self.search_var, bg=COLORS["bg_entry"],
                                      fg=COLORS["fg_gray"], insertbackground="white",
                                      relief="flat", font=("Arial", 11))
-        self.search_entry.pack(fill=tk.X, padx=14, pady=9, ipady=6)
+        self.search_entry.pack(fill=tk.X, padx=15, pady=10, ipady=6)
         self.search_entry.insert(0, "Search")
 
         tk.Label(sidebar, text="Сортировка", bg=COLORS["bg_side"], fg=COLORS["fg_white"],
-                 font=("Arial", 10, "bold")).pack(anchor="w", padx=14)
+                 font=("Arial", 10, "bold")).pack(anchor="w", padx=15)
 
         self.sort_menu = tk.OptionMenu(sidebar, self.sort_var, "По дате", "По названию", "По категории",
                                        command=lambda _: self.sort_notes())
         self._style_widget(self.sort_menu)
-        self.sort_menu.pack(fill=tk.X, padx=14, pady=7)
+        self.sort_menu.pack(fill=tk.X, padx=15, pady=8)
 
         self.notes_listbox = tk.Listbox(sidebar, bg=COLORS["bg_card"], fg=COLORS["fg_white"],
                                         selectbackground=COLORS["btn_blue"], relief="flat",
                                         bd=0, font=("Arial", 10))
-        self.notes_listbox.pack(fill=tk.BOTH, expand=True, padx=14, pady=9)
+        self.notes_listbox.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
 
         main = tk.Frame(self.root, bg=COLORS["bg_main"])
         main.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self.title_entry = tk.Entry(main, textvariable=self.title_var, bg=COLORS["bg_entry"],
                                     fg=COLORS["fg_white"], insertbackground="white",
-                                    relief="flat", font=("Arial", 17))
-        self.title_entry.pack(fill=tk.X, padx=19, pady=(14, 7), ipady=8)
+                                    relief="flat", font=("Arial", 18))
+        self.title_entry.pack(fill=tk.X, padx=20, pady=(15, 8), ipady=8)
 
         cat_frame = tk.Frame(main, bg=COLORS["bg_main"])
-        cat_frame.pack(fill=tk.X, padx=19, pady=5)
+        cat_frame.pack(fill=tk.X, padx=20, pady=5)
 
         self.cat_option_menu = tk.OptionMenu(cat_frame, self.category_var, *self.categories)
         self._style_widget(self.cat_option_menu)
-        self.cat_option_menu.config(width=14)
-        self.cat_option_menu.pack(side=tk.LEFT, padx=(0, 9))
+        self.cat_option_menu.config(width=15)
+        self.cat_option_menu.pack(side=tk.LEFT, padx=(0, 10))
 
         for text, cmd in [("Новая", self.add_category), ("Изменить", self.rename_category),
                           ("Удалить", self.delete_category)]:
             self.make_button(cat_frame, text, cmd, COLORS["btn_light"], COLORS["fg_dark"],
-                             width=9).pack(side=tk.LEFT, padx=4)
+                             width=10).pack(side=tk.LEFT, padx=5)
 
         self.text_area = tk.Text(main, wrap=tk.WORD, bg=COLORS["bg_card"], fg=COLORS["fg_white"],
-                                 insertbackground="white", relief="flat", font=("Arial", 12), undo=True)
-        self.text_area.pack(fill=tk.BOTH, expand=True, padx=19, pady=9)
+                                 insertbackground="white", relief="flat", font=("Arial", 13), undo=True)
+        self.text_area.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         btn_row = tk.Frame(main, bg=COLORS["bg_main"])
-        btn_row.pack(fill=tk.X, padx=19, pady=9)
+        btn_row.pack(fill=tk.X, padx=20, pady=10)
 
-        for text, cmd in [("Сохранить", self.save_note), ("Удалить", self.delete_note)]:
-            self.make_button(btn_row, text, cmd, COLORS["btn_light"], COLORS["fg_dark"]).pack(side=tk.LEFT, padx=4)
+        for text, cmd in [("Сохранить", self.save_note), ("Удалить", self.delete_note),
+                          ("Экспорт", self.export_note)]:
+            self.make_button(btn_row, text, cmd, COLORS["btn_light"], COLORS["fg_dark"]).pack(side=tk.LEFT, padx=5)
 
     def make_button(self, parent, text, command, color, fg, width=None):
         btn = tk.Button(parent, text=text, command=command, bg=color, fg=fg, relief="flat",
-                        cursor="hand2", font=("Arial", 10, "bold"), padx=11, pady=7,
+                        cursor="hand2", font=("Arial", 10, "bold"), padx=12, pady=8,
                         activebackground=color)
         if width:
             btn.config(width=width)
@@ -258,6 +259,18 @@ class NotesApp:
         else:
             self.notes.sort(key=lambda x: x['date'], reverse=True)
         self.refresh_list()
+
+    def export_note(self):
+        if self.current_note_index is None:
+            return messagebox.showwarning("!", "Выберите заметку")
+        note = self.notes[self.current_note_index]
+        path = filedialog.asksaveasfilename(defaultextension=".json",
+                                            initialfile=f"{note['title']}.json",
+                                            filetypes=[("JSON", "*.json")])
+        if path:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(note, f, indent=4, ensure_ascii=False)
+            messagebox.showinfo("Готово", "Успешно сохранено")
 
     def refresh_list(self):
         self.visible_indices = list(range(len(self.notes)))

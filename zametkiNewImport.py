@@ -21,9 +21,9 @@ COLORS = {
 class NotesApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Notes App")
-        self.root.geometry("1120x650")
-        self.root.minsize(930, 530)
+        self.root.title("Notes App Pro")
+        self.root.geometry("1130x660")
+        self.root.minsize(950, 540)
         self.root.configure(bg=COLORS["bg_main"])
 
         self.notes = []
@@ -41,7 +41,7 @@ class NotesApp:
         self.load_notes()
 
     def _init_ui(self):
-        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=315)
+        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=318)
         sidebar.pack(side=tk.LEFT, fill=tk.Y)
         sidebar.pack_propagate(False)
 
@@ -99,7 +99,7 @@ class NotesApp:
         btn_row.pack(fill=tk.X, padx=20, pady=10)
 
         for text, cmd in [("Сохранить", self.save_note), ("Удалить", self.delete_note),
-                          ("Экспорт", self.export_note)]:
+                          ("Импорт", self.import_note), ("Экспорт", self.export_note)]:
             self.make_button(btn_row, text, cmd, COLORS["btn_light"], COLORS["fg_dark"]).pack(side=tk.LEFT, padx=5)
 
     def make_button(self, parent, text, command, color, fg, width=None):
@@ -271,6 +271,25 @@ class NotesApp:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(note, f, indent=4, ensure_ascii=False)
             messagebox.showinfo("Готово", "Успешно сохранено")
+
+    def import_note(self):
+        path = filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
+        if not path:
+            return
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict) and 'title' in data:
+                if data.get('category') not in self.categories:
+                    self.categories.append(data['category'])
+                self.notes.append(data)
+                self._update_cat_menu()
+                self._finalize_change()
+                messagebox.showinfo("Импорт", "Готово")
+            else:
+                messagebox.showerror("Ошибка", "Неверный формат файла")
+        except:
+            messagebox.showerror("Ошибка", "Файл поврежден")
 
     def refresh_list(self):
         self.visible_indices = list(range(len(self.notes)))

@@ -22,8 +22,8 @@ class NotesApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Notes App Pro")
-        self.root.geometry("1130x660")
-        self.root.minsize(950, 540)
+        self.root.geometry("1140x665")
+        self.root.minsize(970, 545)
         self.root.configure(bg=COLORS["bg_main"])
 
         self.notes = []
@@ -46,7 +46,7 @@ class NotesApp:
         sidebar.pack_propagate(False)
 
         tk.Label(sidebar, text="Заметки", bg=COLORS["bg_side"], fg=COLORS["fg_white"],
-                 font=("Arial", 20, "bold")).pack(pady=14)
+                 font=("Arial", 20, "bold")).pack(pady=15)
 
         self.make_button(sidebar, "+ Новая заметка", self.new_note,
                          COLORS["btn_light"], COLORS["fg_dark"]).pack(fill=tk.X, padx=15, pady=5)
@@ -261,16 +261,37 @@ class NotesApp:
         self.refresh_list()
 
     def export_note(self):
-        if self.current_note_index is None:
-            return messagebox.showwarning("!", "Выберите заметку")
-        note = self.notes[self.current_note_index]
-        path = filedialog.asksaveasfilename(defaultextension=".json",
-                                            initialfile=f"{note['title']}.json",
-                                            filetypes=[("JSON", "*.json")])
-        if path:
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(note, f, indent=4, ensure_ascii=False)
-            messagebox.showinfo("Готово", "Успешно сохранено")
+        if not self.notes:
+            return
+        win = tk.Toplevel(self.root)
+        win.title("Экспорт")
+        win.geometry("300x110")
+        win.configure(bg=COLORS["bg_main"])
+        win.transient(self.root)
+        win.grab_set()
+
+        tk.Label(win, text="Экспорт:", bg=COLORS["bg_main"], fg=COLORS["fg_white"],
+                 font=("Arial", 11, "bold")).pack(pady=10)
+        btns = tk.Frame(win, bg=COLORS["bg_main"])
+        btns.pack()
+
+        def run_export(is_all):
+            if not is_all and self.current_note_index is None:
+                return messagebox.showwarning("!", "Выберите заметку")
+            win.destroy()
+            fname = "all_notes.json" if is_all else f"{self.notes[self.current_note_index]['title']}.json"
+            path = filedialog.asksaveasfilename(defaultextension=".json", initialfile=fname,
+                                                filetypes=[("JSON", "*.json")])
+            if path:
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(self.notes if is_all else self.notes[self.current_note_index], f, indent=4,
+                              ensure_ascii=False)
+                messagebox.showinfo("Готово", "Успешно сохранено")
+
+        self.make_button(btns, "Текущую", lambda: run_export(False), COLORS["btn_light"],
+                         COLORS["fg_dark"]).pack(side=tk.LEFT, padx=10)
+        self.make_button(btns, "Все заметки", lambda: run_export(True), COLORS["btn_light"],
+                         COLORS["fg_dark"]).pack(side=tk.LEFT, padx=10)
 
     def import_note(self):
         path = filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
@@ -279,15 +300,15 @@ class NotesApp:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            if isinstance(data, dict) and 'title' in data:
-                if data.get('category') not in self.categories:
-                    self.categories.append(data['category'])
-                self.notes.append(data)
-                self._update_cat_menu()
-                self._finalize_change()
-                messagebox.showinfo("Импорт", "Готово")
-            else:
-                messagebox.showerror("Ошибка", "Неверный формат файла")
+            items = data if isinstance(data, list) else [data]
+            for it in items:
+                if isinstance(it, dict) and 'title' in it:
+                    if it.get('category') not in self.categories:
+                        self.categories.append(it['category'])
+                    self.notes.append(it)
+            self._update_cat_menu()
+            self._finalize_change()
+            messagebox.showinfo("Импорт", "Готово")
         except:
             messagebox.showerror("Ошибка", "Файл поврежден")
 

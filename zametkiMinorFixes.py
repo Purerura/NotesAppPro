@@ -22,8 +22,8 @@ class NotesApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Notes App Pro")
-        self.root.geometry("1140x665")
-        self.root.minsize(970, 545)
+        self.root.geometry("1150x680")
+        self.root.minsize(980, 560)
         self.root.configure(bg=COLORS["bg_main"])
 
         self.notes = []
@@ -41,7 +41,7 @@ class NotesApp:
         self.load_notes()
 
     def _init_ui(self):
-        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=318)
+        sidebar = tk.Frame(self.root, bg=COLORS["bg_side"], width=320)
         sidebar.pack(side=tk.LEFT, fill=tk.Y)
         sidebar.pack_propagate(False)
 
@@ -265,7 +265,7 @@ class NotesApp:
             return
         win = tk.Toplevel(self.root)
         win.title("Экспорт")
-        win.geometry("300x110")
+        win.geometry("320x120")
         win.configure(bg=COLORS["bg_main"])
         win.transient(self.root)
         win.grab_set()

@@ -27,7 +27,7 @@ class NotesApp:
         self.load_notes()
 
     def _init_ui(self):
-        left = tk.Frame(self.root, bg=COLORS["bg"], width=250)
+        left = tk.Frame(self.root, bg=COLORS["bg"], width=260)
         left.pack(side=tk.LEFT, fill=tk.Y)
         left.pack_propagate(False)
 
@@ -51,6 +51,10 @@ class NotesApp:
                                     relief="sunken", font=("Arial", 14))
         self.title_entry.pack(fill=tk.X, padx=15, pady=(15, 5), ipady=5)
 
+        self.date_label = tk.Label(right, text="", bg=COLORS["bg"], fg="#888888",
+                                   font=("Arial", 9))
+        self.date_label.pack(anchor="w", padx=15)
+
         self.text_area = tk.Text(right, wrap=tk.WORD, bg="white", fg=COLORS["fg"],
                                  relief="sunken", font=("Arial", 11))
         self.text_area.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
@@ -67,21 +71,24 @@ class NotesApp:
         self.current_note_index = None
         self.title_entry.delete(0, tk.END)
         self.text_area.delete("1.0", tk.END)
+        self.date_label.config(text="")
 
     def save_note(self):
         title = self.title_entry.get().strip()
         if not title:
             messagebox.showwarning("Ошибка", "Введите заголовок")
             return
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
         data = {
             "title": title,
             "content": self.text_area.get("1.0", tk.END).strip(),
-            "date": datetime.now().strftime("%Y-%m-%d %H:%M")
+            "date": now
         }
         if self.current_note_index is None:
             self.notes.append(data)
         else:
             self.notes[self.current_note_index] = data
+        self.date_label.config(text=f"Сохранено: {now}")
         self.save_to_file()
         self.refresh_list()
 
@@ -103,11 +110,12 @@ class NotesApp:
         self.title_entry.insert(0, n["title"])
         self.text_area.delete("1.0", tk.END)
         self.text_area.insert("1.0", n["content"])
+        self.date_label.config(text=f"Сохранено: {n.get('date', '---')}")
 
     def refresh_list(self):
         self.notes_listbox.delete(0, tk.END)
         for n in self.notes:
-            self.notes_listbox.insert(tk.END, n["title"])
+            self.notes_listbox.insert(tk.END, f"{n['title']}  ({n.get('date', '---')})")
 
     def save_to_file(self):
         with open(DATA_FILE, "w", encoding="utf-8") as f:
